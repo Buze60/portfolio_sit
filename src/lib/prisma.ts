@@ -10,7 +10,10 @@ const isPostgres = process.env.DATABASE_URL?.startsWith("postgresql")
 
 function createPrismaClient() {
   if (isPostgres) {
-    return new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
+    const url = process.env.DATABASE_URL!.includes("?")
+      ? `${process.env.DATABASE_URL!}&sslmode=require`
+      : `${process.env.DATABASE_URL!}?sslmode=require`
+    return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) })
   }
   return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: 'file:./prisma/dev.db' }) })
 }

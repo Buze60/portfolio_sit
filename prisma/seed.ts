@@ -5,9 +5,17 @@ import { hash } from 'bcryptjs'
 
 const isPostgres = process.env.DATABASE_URL?.startsWith("postgresql")
 
-const prisma = isPostgres
-  ? new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) })
-  : new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: 'file:./prisma/dev.db' }) })
+function createPrismaClient() {
+  if (isPostgres) {
+    const url = process.env.DATABASE_URL!.includes("?")
+      ? `${process.env.DATABASE_URL!}&sslmode=require`
+      : `${process.env.DATABASE_URL!}?sslmode=require`
+    return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) })
+  }
+  return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: 'file:./prisma/dev.db' }) })
+}
+
+const prisma = createPrismaClient()
 
 async function main() {
   const existingAdmin = await prisma.user.findUnique({ where: { email: 'admin@portfolio.com' } })
