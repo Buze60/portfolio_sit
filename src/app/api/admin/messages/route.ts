@@ -3,26 +3,31 @@ import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
 async function isAuthenticated() {
-  const session = await auth()
-  return !!session?.user
+  try { return !!(await auth())?.user } catch { return false }
 }
 
 export async function GET() {
   if (!(await isAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const messages = await prisma.message.findMany({ orderBy: { createdAt: "desc" } })
-  return NextResponse.json(messages)
+  try {
+    const messages = await prisma.message.findMany({ orderBy: { createdAt: "desc" } })
+    return NextResponse.json(messages)
+  } catch { return NextResponse.json([]) }
 }
 
 export async function PUT(request: Request) {
   if (!(await isAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const { id, read } = await request.json()
-  const message = await prisma.message.update({ where: { id }, data: { read } })
-  return NextResponse.json(message)
+  try {
+    const { id, read } = await request.json()
+    const message = await prisma.message.update({ where: { id }, data: { read } })
+    return NextResponse.json(message)
+  } catch { return NextResponse.json({ error: "Database error" }, { status: 500 }) }
 }
 
 export async function DELETE(request: Request) {
   if (!(await isAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const { id } = await request.json()
-  await prisma.message.delete({ where: { id } })
-  return NextResponse.json({ success: true })
+  try {
+    const { id } = await request.json()
+    await prisma.message.delete({ where: { id } })
+    return NextResponse.json({ success: true })
+  } catch { return NextResponse.json({ error: "Database error" }, { status: 500 }) }
 }

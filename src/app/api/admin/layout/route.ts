@@ -3,8 +3,7 @@ import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
 async function isAuthenticated() {
-  const session = await auth()
-  return !!session?.user
+  try { return !!(await auth())?.user } catch { return false }
 }
 
 export async function GET() {

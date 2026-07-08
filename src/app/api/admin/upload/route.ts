@@ -3,8 +3,7 @@ import { v2 as cloudinary } from "cloudinary"
 import { auth } from "@/lib/auth"
 
 async function isAuthenticated() {
-  const session = await auth()
-  return !!session?.user
+  try { return !!(await auth())?.user } catch { return false }
 }
 
 cloudinary.config({
