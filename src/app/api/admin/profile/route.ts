@@ -10,24 +10,17 @@ export async function GET() {
   if (!(await isAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   try {
     const session = await auth()
-    const user = await prisma.user.findUnique({ where: { id: session?.user?.id } })
+    let user = session?.user?.id
+      ? await prisma.user.findUnique({ where: { id: session.user.id } })
+      : null
+    if (!user && session?.user?.email) {
+      user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    }
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
     const { password, ...profile } = user
     return NextResponse.json(profile)
   } catch {
-    return NextResponse.json({
-      name: "Bizuayehu Simachew",
-      title: "Full Stack Developer",
-      about: "",
-      email: "admin@portfolio.com",
-      phone: "",
-      location: "",
-      image: "",
-      socialGithub: "",
-      socialLinkedin: "",
-      socialTwitter: "",
-      socialWebsite: "",
-    })
+    return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 })
   }
 }
 
@@ -35,9 +28,16 @@ export async function PUT(request: Request) {
   if (!(await isAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   try {
     const session = await auth()
+    let user = session?.user?.id
+      ? await prisma.user.findUnique({ where: { id: session.user.id } })
+      : null
+    if (!user && session?.user?.email) {
+      user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    }
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
     const data = await request.json()
-    const user = await prisma.user.update({ where: { id: session?.user?.id }, data })
-    const { password, ...profile } = user
+    const updated = await prisma.user.update({ where: { id: user.id }, data })
+    const { password, ...profile } = updated
     return NextResponse.json(profile)
   } catch { return NextResponse.json({ error: "Database error" }, { status: 500 }) }
 }
